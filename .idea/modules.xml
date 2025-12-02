@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/groupwork/groupwork.iml" filepath="$PROJECT_DIR$/groupwork/groupwork.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/gym_system.iml" filepath="$PROJECT_DIR$/.idea/gym_system.iml" />
     </modules>
   </component>
