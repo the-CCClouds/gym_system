@@ -63,12 +63,13 @@ public class MemberDAO {
             pstmt.setInt(1, memberId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                member = extractMemberFromResultSet(rs);
+               return extractMemberFromResultSet(rs);
             }
+            return null;
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return member;
+        return null;
     }
 
 
@@ -137,6 +138,25 @@ public class MemberDAO {
         return getStringMember(status,sql,member);
     }
 
+    // 6. 根据手机号搜索
+    public List<Member> searchByPhone(String phone) {
+        List<Member> members = new ArrayList<>();
+        String sql = "SELECT * FROM member WHERE phone LIKE ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + phone + "%");
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                members.add(extractMemberFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return members;
+    }
 
 
 
@@ -147,32 +167,52 @@ public class MemberDAO {
      * @return 是否添加成功（true表示成功，false表示失败）
      */
 
+    // 3. 添加会员
     public boolean addMember(Member member) {
-        String sql = "INSERT INTO member(name, phone, email, gender, birth_date, register_date, status) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?)";
-        //insert into member:向member表中插入
-        //(name,phone,email,status):指定要插入的字段
-        //VALUES(?,?,?,?):使用占位符表示要插入的值
+        // 数据校验
+        if (!isValidEmail(member.getEmail())) {
+            System.err.println("无效的邮箱格式: " + member.getEmail());
+            return false;
+        }
+        if (!isValidPhone(member.getPhone())) {
+            System.err.println("无效的手机号: " + member.getPhone());
+            return false;
+        }
+        if (!isValidStatus(member.getStatus())) {
+            System.err.println("无效的状态: " + member.getStatus());
+            return false;
+        }
+
+        String sql = "INSERT INTO member (name, phone, email, gender, birth_date, register_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-            //设置占位符的值
+             PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+
             pstmt.setString(1, member.getName());
             pstmt.setString(2, member.getPhone());
             pstmt.setString(3, member.getEmail());
             pstmt.setString(4, member.getGender());
-            pstmt.setDate(5, new Date(member.getBirthDate().getTime()));
+            pstmt.setDate(5, new java.sql.Date(member.getBirthDate().getTime()));
             pstmt.setTimestamp(6, new Timestamp(member.getRegisterDate().getTime()));
             pstmt.setString(7, member.getStatus());
-            //执行更新操作
-            int rows = pstmt.executeUpdate();
 
-            //如果影响的行数大于0，表示添加成功
-            return rows > 0;
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        member.setId(rs.getInt(1));
+                    }
+                }
+            }
+            return affectedRows > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
+
 
     /**
      * 更新成员到数据库
@@ -224,6 +264,18 @@ public class MemberDAO {
             return false;
         }
 
+    }
+    // 校验方法
+    private boolean isValidEmail(String email) {
+        return email != null && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone != null && phone.matches("^1[3-9]\\d{9}$");
+    }
+
+    private boolean isValidStatus(String status) {
+        return "active".equals(status) || "inactive".equals(status) || "frozen".equals(status);
     }
 
 }
