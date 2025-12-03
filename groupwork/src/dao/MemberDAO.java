@@ -13,9 +13,8 @@ public class MemberDAO {
     public MemberDAO() {
     }
 
-    public Member queryAllMember(ResultSet rs) throws SQLException{
+    public Member extractMemberFromResultSet(ResultSet rs) throws SQLException{
         Member member = new Member();
-        try {
             member.setId(rs.getInt("member_id"));
             member.setName(rs.getString("name"));
             member.setPhone(rs.getString("phone"));
@@ -24,9 +23,6 @@ public class MemberDAO {
             member.setBirthDate(rs.getDate("birth_date"));
             member.setRegisterDate(rs.getDate("register_date"));
             member.setStatus(rs.getString("status"));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
         return member;
     }
 
@@ -40,7 +36,7 @@ public class MemberDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                members.add(queryAllMember(rs));
+                members.add(extractMemberFromResultSet(rs));
             }
 
 
@@ -67,7 +63,7 @@ public class MemberDAO {
             pstmt.setInt(1, memberId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                member = queryAllMember(rs);
+                member = extractMemberFromResultSet(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -84,21 +80,9 @@ public class MemberDAO {
      * @return 返回查询结果
      */
     public List<Member> getMemberByName(String name) {
-        List<Member> member = new ArrayList<>(); {
-        };
+        List<Member> member = new ArrayList<>();
         String sql = "select * from member where name = ?";
-        try(Connection conn=DBUtil.getConnection();PreparedStatement pstmt=conn.prepareStatement(sql);){
-            pstmt.setString(1,name);
-            try(ResultSet rs=pstmt.executeQuery()){
-                while(rs.next()){
-                    member.add(queryAllMember(rs));
-                }
-            }
-            
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-        return member;
+        return getStringMember(name,sql,member);
     }
 
     /**
@@ -108,8 +92,7 @@ public class MemberDAO {
      * @return 返回查询结果
      */
     public List<Member> getMemberByGender(String gender) {
-        List<Member> member = new ArrayList<>(); {
-        };
+        List<Member> member = new ArrayList<>();
         String sql = "select * from member where gender = ?";
         return  getStringMember(gender, sql, member);
     }
@@ -120,7 +103,7 @@ public class MemberDAO {
             pstmt.setString(1, gender);
             try(ResultSet rs=pstmt.executeQuery()){
                 while(rs.next()){
-                    member.add(queryAllMember(rs));
+                    member.add(extractMemberFromResultSet(rs));
                 }
             }
 
@@ -139,7 +122,7 @@ public class MemberDAO {
            pstmt.setDate(1, new java.sql.Date(birthDate.getTime()));
            try (ResultSet rs = pstmt.executeQuery()) {
                while (rs.next()) {
-                   member.add(queryAllMember(rs));
+                   member.add(extractMemberFromResultSet(rs));
                }
            }
        } catch (SQLException e) {

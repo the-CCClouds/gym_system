@@ -1,7 +1,6 @@
 package dao;
 
 import entity.Course;
-import entity.Member;
 import utils.DBUtil;
 
 import java.sql.Connection;
@@ -13,18 +12,14 @@ import java.util.List;
 
 public class CourseDAO {
 
-    public Course QueryAllCourse(ResultSet rs) throws SQLException {
+    public Course extractCourseFromResultSet(ResultSet rs) throws SQLException {
         Course course = new Course();
-        try {
-            course.setCourseId(rs.getInt("course_id"));
-            course.setName(rs.getString("name"));
-            course.setType(rs.getString("type"));
-            course.setDuration(rs.getInt("duration"));
-            course.setMaxCapacity(rs.getInt("max_capacity"));
-            course.setEmployeeId(rs.getInt("employee_id"));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        course.setCourseId(rs.getInt("course_id"));
+        course.setName(rs.getString("name"));
+        course.setType(rs.getString("type"));
+        course.setDuration(rs.getInt("duration"));
+        course.setMaxCapacity(rs.getInt("max_capacity"));
+        course.setEmployeeId(rs.getInt("employee_id"));
         return course;
     }
 
@@ -33,7 +28,7 @@ public class CourseDAO {
         String sql = "select * from course";
         try (Connection conn = DBUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                course.add(QueryAllCourse(rs));
+                course.add(extractCourseFromResultSet(rs));
             }
 
         } catch (SQLException e) {
@@ -45,9 +40,13 @@ public class CourseDAO {
     public Course getCourseById(int courseId) {
         Course course = new Course();
         String sql = "select * from course where course_id = ?";
-        try (Connection conn = DBUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql); ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                course = QueryAllCourse(rs);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    course = extractCourseFromResultSet(rs);
+                }
             }
 
         } catch (SQLException e) {
@@ -59,9 +58,12 @@ public class CourseDAO {
     public List<Course> getCourseByType(String type) {
         List<Course> course = new ArrayList<>();
         String sql = "select * from course where type = ?";
-        try (Connection conn = DBUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql); ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                course.add(QueryAllCourse(rs));
+        try (Connection conn = DBUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql);) {
+            pstmt.setString(1, type);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    course.add(extractCourseFromResultSet(rs));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
