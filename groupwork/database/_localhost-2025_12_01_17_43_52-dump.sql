@@ -165,6 +165,32 @@ SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = @saved_cs_client;
 
 --
+-- Table structure for table `employee_role`
+--
+
+DROP TABLE IF EXISTS `employee_role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `employee_role` (
+  `role_id` int NOT NULL,
+  `role_name` varchar(50) NOT NULL,
+  `description` varchar(200) DEFAULT NULL,
+  `permissions` varchar(500) DEFAULT NULL COMMENT '权限列表，逗号分隔',
+  PRIMARY KEY (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='员工角色表：存储员工角色类型，体现继承关系';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `employee_role`
+--
+
+LOCK TABLES `employee_role` WRITE;
+/*!40000 ALTER TABLE `employee_role` DISABLE KEYS */;
+INSERT INTO `employee_role` VALUES (1,'Trainer','健身教练，负责课程教学','course_view,course_manage_own,booking_view_own,booking_confirm_own,member_view'),(2,'Receptionist','前台接待，负责会员登记','member_view,member_add,member_edit,card_view,card_add,card_renew,booking_view,booking_confirm,checkin_manage,order_view,order_create'),(3,'Admin','管理员，负责系统管理','member_view,member_add,member_edit,member_delete,card_view,card_add,card_renew,card_delete,course_view,course_add,course_edit,course_delete,booking_view,booking_confirm,checkin_manage,order_view,order_create,product_manage,employee_view,employee_add,employee_edit,employee_delete');
+/*!40000 ALTER TABLE `employee_role` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `employee`
 --
 
@@ -174,10 +200,12 @@ DROP TABLE IF EXISTS `employee`;
 CREATE TABLE `employee` (
   `employee_id` int NOT NULL,
   `name` varchar(100) NOT NULL,
-  `role` enum('trainer','receptionist','admin') DEFAULT 'receptionist',
+  `role_id` int DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `hire_date` date NOT NULL,
-  PRIMARY KEY (`employee_id`)
+  PRIMARY KEY (`employee_id`),
+  KEY `role_id` (`role_id`),
+  CONSTRAINT `employee_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `employee_role` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='员工表：存储健身房员工信息，包括教练、前台和管理员';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -187,7 +215,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1,'张教练','trainer','13800001111','2023-01-15'),(2,'李教练','trainer','13800002222','2023-03-20'),(3,'王教练','trainer','13800003333','2023-06-10'),(4,'赵前台','receptionist','13800004444','2024-01-05'),(5,'刘管理员','admin','13800005555','2022-12-01'),(6,'陈教练','trainer','13800006666','2024-02-14'),(7,'周前台','receptionist','13800007777','2024-03-01');
+INSERT INTO `employee` VALUES (1,'张教练',1,'13800001111','2023-01-15'),(2,'李教练',1,'13800002222','2023-03-20'),(3,'王教练',1,'13800003333','2023-06-10'),(4,'赵前台',2,'13800004444','2024-01-05'),(5,'刘管理员',3,'13800005555','2022-12-01'),(6,'陈教练',1,'13800006666','2024-02-14'),(7,'周前台',2,'13800007777','2024-03-01');
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 

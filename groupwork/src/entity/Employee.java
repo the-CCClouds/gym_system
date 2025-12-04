@@ -5,17 +5,27 @@ import java.util.Date;
 public class Employee implements Person{
     private int employeeId;
     private String name;
-    private String role; // 'trainer', 'receptionist', 'admin'
+    private int roleId;  // 外键关联 employee_role 表
+    private EmployeeRole employeeRole;  // 关联的角色对象
     private String phone;
     private Date hireDate; // 入职日期
 
     public Employee() {
     }
 
-    public Employee(int employeeId, String name, String role, String phone, Date hireDate) {
+    public Employee(int employeeId, String name, int roleId, String phone, Date hireDate) {
         this.employeeId = employeeId;
         this.name = name;
-        this.role = role;
+        this.roleId = roleId;
+        this.phone = phone;
+        this.hireDate = hireDate;
+    }
+
+    public Employee(int employeeId, String name, EmployeeRole employeeRole, String phone, Date hireDate) {
+        this.employeeId = employeeId;
+        this.name = name;
+        this.employeeRole = employeeRole;
+        this.roleId = employeeRole != null ? employeeRole.getRoleId() : 0;
         this.phone = phone;
         this.hireDate = hireDate;
     }
@@ -38,18 +48,43 @@ public class Employee implements Person{
         this.name = name;
     }
 
+    public int getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(int roleId) {
+        this.roleId = roleId;
+    }
+
+    public EmployeeRole getEmployeeRole() {
+        return employeeRole;
+    }
+
+    public void setEmployeeRole(EmployeeRole employeeRole) {
+        this.employeeRole = employeeRole;
+        if (employeeRole != null) {
+            this.roleId = employeeRole.getRoleId();
+        }
+    }
+
     @Override
     public String getRole() {
-        return role;
+        // 优先返回关联对象的角色名称
+        if (employeeRole != null) {
+            return employeeRole.getRoleName();
+        }
+        // 根据 roleId 返回默认角色名称
+        switch (roleId) {
+            case 1: return "Trainer";
+            case 2: return "Receptionist";
+            case 3: return "Admin";
+            default: return "Unknown";
+        }
     }
 
     @Override
     public String getBasicInfo() {
-        return employeeId+" - "+name+" - "+role+" - "+phone;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
+        return employeeId + " - " + name + " - " + getRole() + " - " + phone;
     }
 
     @Override
@@ -74,7 +109,8 @@ public class Employee implements Person{
         return "Employee{" +
                 "employeeId=" + employeeId +
                 ", name='" + name + '\'' +
-                ", role='" + role + '\'' +
+                ", roleId=" + roleId +
+                ", role='" + getRole() + '\'' +
                 ", phone='" + phone + '\'' +
                 ", hireDate=" + hireDate +
                 '}';
