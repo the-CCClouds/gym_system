@@ -268,12 +268,40 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `register_date`,
  1 AS `member_status`,
  1 AS `card_id`,
- 1 AS `card_type`,
+ 1 AS `type_id`,
+ 1 AS `type_name`,
  1 AS `start_date`,
  1 AS `end_date`,
  1 AS `card_status`,
  1 AS `days_remaining`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `membership_type`
+--
+
+DROP TABLE IF EXISTS `membership_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `membership_type` (
+  `type_id` int NOT NULL,
+  `type_name` varchar(50) NOT NULL,
+  `duration_days` int NOT NULL,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `description` varchar(200) DEFAULT NULL,
+  PRIMARY KEY (`type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡类型表：存储会员卡类型，体现继承关系';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `membership_type`
+--
+
+LOCK TABLES `membership_type` WRITE;
+/*!40000 ALTER TABLE `membership_type` DISABLE KEYS */;
+INSERT INTO `membership_type` VALUES (1,'Monthly',30,200.00,'月卡会员，有效期30天'),(2,'Yearly',365,1200.00,'年卡会员，有效期365天');
+/*!40000 ALTER TABLE `membership_type` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `membership_card`
@@ -285,14 +313,16 @@ DROP TABLE IF EXISTS `membership_card`;
 CREATE TABLE `membership_card` (
   `card_id` int NOT NULL AUTO_INCREMENT,
   `member_id` int DEFAULT NULL,
-  `card_type` enum('yearly','monthly') DEFAULT 'monthly',
+  `type_id` int DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `card_status` enum('active','inactive','expired') DEFAULT 'active',
   PRIMARY KEY (`card_id`),
   KEY `member_id` (`member_id`),
-  CONSTRAINT `membership_card_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡表：存储会员的会籍卡信息，包括年卡和月卡';
+  KEY `type_id` (`type_id`),
+  CONSTRAINT `membership_card_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`),
+  CONSTRAINT `membership_card_ibfk_2` FOREIGN KEY (`type_id`) REFERENCES `membership_type` (`type_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员卡表：存储会员的会籍卡信息';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -301,7 +331,7 @@ CREATE TABLE `membership_card` (
 
 LOCK TABLES `membership_card` WRITE;
 /*!40000 ALTER TABLE `membership_card` DISABLE KEYS */;
-INSERT INTO `membership_card` VALUES (1,1,'yearly','2024-01-10','2025-01-09','active'),(2,2,'monthly','2024-11-15','2024-12-14','active'),(3,3,'yearly','2024-03-05','2025-03-04','active'),(4,4,'monthly','2024-11-12','2024-12-11','active'),(5,5,'yearly','2024-05-20','2025-05-19','active'),(6,6,'monthly','2024-11-08','2024-12-07','active'),(7,7,'yearly','2024-07-15','2025-07-14','active'),(8,8,'monthly','2024-08-01','2024-08-31','expired'),(9,9,'monthly','2024-11-10','2024-12-09','active'),(10,10,'yearly','2024-10-05','2025-10-04','active');
+INSERT INTO `membership_card` VALUES (1,1,2,'2024-01-10','2025-01-09','active'),(2,2,1,'2024-11-15','2024-12-14','active'),(3,3,2,'2024-03-05','2025-03-04','active'),(4,4,1,'2024-11-12','2024-12-11','active'),(5,5,2,'2024-05-20','2025-05-19','active'),(6,6,1,'2024-11-08','2024-12-07','active'),(7,7,2,'2024-07-15','2025-07-14','active'),(8,8,1,'2024-08-01','2024-08-31','expired'),(9,9,1,'2024-11-10','2024-12-09','active'),(10,10,2,'2024-10-05','2025-10-04','active');
 /*!40000 ALTER TABLE `membership_card` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -488,7 +518,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `member_detail_view` AS select `m`.`member_id` AS `member_id`,`m`.`name` AS `name`,`m`.`phone` AS `phone`,`m`.`email` AS `email`,`m`.`gender` AS `gender`,`m`.`birth_date` AS `birth_date`,(year(curdate()) - year(`m`.`birth_date`)) AS `age`,`m`.`register_date` AS `register_date`,`m`.`status` AS `member_status`,`mc`.`card_id` AS `card_id`,`mc`.`card_type` AS `card_type`,`mc`.`start_date` AS `start_date`,`mc`.`end_date` AS `end_date`,`mc`.`card_status` AS `card_status`,(to_days(`mc`.`end_date`) - to_days(curdate())) AS `days_remaining` from (`member` `m` left join `membership_card` `mc` on((`m`.`member_id` = `mc`.`member_id`))) */;
+/*!50001 VIEW `member_detail_view` AS select `m`.`member_id` AS `member_id`,`m`.`name` AS `name`,`m`.`phone` AS `phone`,`m`.`email` AS `email`,`m`.`gender` AS `gender`,`m`.`birth_date` AS `birth_date`,(year(curdate()) - year(`m`.`birth_date`)) AS `age`,`m`.`register_date` AS `register_date`,`m`.`status` AS `member_status`,`mc`.`card_id` AS `card_id`,`mc`.`type_id` AS `type_id`,`mt`.`type_name` AS `type_name`,`mc`.`start_date` AS `start_date`,`mc`.`end_date` AS `end_date`,`mc`.`card_status` AS `card_status`,(to_days(`mc`.`end_date`) - to_days(curdate())) AS `days_remaining` from ((`member` `m` left join `membership_card` `mc` on((`m`.`member_id` = `mc`.`member_id`))) left join `membership_type` `mt` on((`mc`.`type_id` = `mt`.`type_id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
