@@ -297,20 +297,31 @@ public class BookingDAO {
         }
         return bookings;
     }
+// 放在 groupwork/src/dao/BookingDAO.java 中
 
     public List<Booking> getBookingHistory(int memberId, java.sql.Date startDate, java.sql.Date endDate) {
         List<Booking> bookings = new java.util.ArrayList<>();
-        String sql = "SELECT * FROM booking " +
-                "WHERE member_id = ? " +
-                "AND booking_time BETWEEN ? AND ? " +
-                "ORDER BY booking_time DESC";
+        StringBuilder sql = new StringBuilder("SELECT * FROM booking WHERE member_id = ?");
+        if (startDate != null && endDate != null) {
+            sql.append(" AND booking_time BETWEEN ? AND ?");
+        } else if (startDate != null) {
+            sql.append(" AND booking_time >= ?");
+        } else if (endDate != null) {
+            sql.append(" AND booking_time <= ?");
+        }
 
         try (Connection conn = utils.DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, memberId);
-            pstmt.setDate(2, startDate);
-            pstmt.setDate(3, endDate);
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            pstmt.setInt(idx++, memberId);
+            if (startDate != null && endDate != null) {
+                pstmt.setDate(idx++, startDate);
+                pstmt.setDate(idx++, endDate);
+            } else if (startDate != null) {
+                pstmt.setDate(idx++, startDate);
+            } else if (endDate != null) {
+                pstmt.setDate(idx++, endDate);
+            }
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -322,6 +333,26 @@ public class BookingDAO {
         }
         return bookings;
     }
+
+
+
+    public List<Booking> getBookingHistory(int memberId, String startDateStr, String endDateStr) {
+        java.sql.Date startDate = null;
+        java.sql.Date endDate = null;
+        try {
+            if (startDateStr != null && !startDateStr.trim().isEmpty()) {
+                startDate = utils.DateUtils.toSqlDate(startDateStr);
+            }
+            if (endDateStr != null && !endDateStr.trim().isEmpty()) {
+                endDate = utils.DateUtils.toSqlDate(endDateStr);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
+        return getBookingHistory(memberId, startDate, endDate);
+    }
+
 
 }
 
